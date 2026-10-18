@@ -113,3 +113,21 @@ jobs:
       - run: |
           echo "🚀 Releasing to production (TEST_ENV=$TEST_ENV)"
           gh release create "prod-$(date +%s)" dist/* --notes "Production release"
+
+          
+  notify-failure:
+    needs: [test-unit, test-integration]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Create issue about failed tests
+        run: |
+          gh issue create \
+            --title "❌ Tests failed in run #${{ github.run_number }}" \
+            --body "Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
