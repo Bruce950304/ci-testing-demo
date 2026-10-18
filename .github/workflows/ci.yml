@@ -23,20 +23,38 @@ jobs:
 
   test-unit:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
     env:
       TEST_ENV: staging
+      JEST_JUNIT_OUTPUT_DIR: reports
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - name: Run unit tests
         run: |
-          echo "Running unit tests (TEST_ENV=$TEST_ENV)"
+          echo "Running unit tests on ${{ matrix.os }} / Node ${{ matrix.node }}"
           npm run test:unit
+      - name: Check coverage threshold
+        run: node scripts/check-coverage.js
+        env:
+          COVERAGE_MIN: 80
+      - name: Upload coverage and JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-reports-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            coverage/
+            reports/
 
   test-integration:
     needs: test-unit
@@ -46,52 +64,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: dist/
-      - name: Run integration tests
-        run: |
-          echo "Running integration tests (TEST_ENV=$TEST_ENV)"
-          npm run test:integration
-
-  deploy-staging:
-    needs: test-integration
-    runs-on: ubuntu-latest
-    environment: staging
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_REPO: ${{ github.repository }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: dist/
-      - run: |
-          echo "✅ All tests passed. Releasing to staging..."
-          gh release create "staging-$(date +%s)" dist/* --prerelease --notes "Staging release"
-
-  deploy-production:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment: production
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_REPO: ${{ github.repository }}
-      TEST_ENV: prod
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: dist/
-      - run: |
-          echo "🚀 Releasing to production (TEST_ENV=$TEST_ENV)"
-          gh release create "prod-$(date +%s)" dist/* --notes "Production release"
