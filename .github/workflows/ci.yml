@@ -64,3 +64,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests (TEST_ENV=$TEST_ENV)"
+          npm run test:integration
+
+  deploy-staging:
+    needs: test-integration
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+      - run: |
+          echo "✅ All tests passed. Releasing to staging..."
+          gh release create "staging-$(date +%s)" dist/* --prerelease --notes "Staging release"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TEST_ENV: prod
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+      - run: |
+          echo "🚀 Releasing to production (TEST_ENV=$TEST_ENV)"
+          gh release create "prod-$(date +%s)" dist/* --notes "Production release"
