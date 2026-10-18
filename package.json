@@ -1,0 +1,31 @@
+{
+  "name": "ci-testing-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+  "build": "node scripts/build.js",
+  "test": "jest",
+  "test:unit": "jest tests/unit --coverage --coverageReporters=json-summary --coverageReporters=text --coverageReporters=lcov --reporters=default --reporters=jest-junit",
+  "test:integration": "jest tests/integration"
+},
+  "jest": {
+  "collectCoverageFrom": ["src/**/*.js"]
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bruce950304/ci-testing-demo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Bruce950304/ci-testing-demo/issues"
+  },
+  "homepage": "https://github.com/Bruce950304/ci-testing-demo#readme",
+  "devDependencies": {
+    "jest": "^30.5.2",
+    "jest-junit": "^17.0.0"
+  }
+}
