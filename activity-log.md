@@ -1,6 +1,6 @@
 Line 1: project started
 
-Line 2: setup CI
+Line 2: setup CI - edited by Xiu-D
 
 Line 3: first feature - edited by Xiu-D and Tai4J
 
