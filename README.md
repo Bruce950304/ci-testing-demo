@@ -12,3 +12,4 @@ Build → Unit Test (matrix) → Integration Test → Staging → Production (ma
 - JUnit and coverage reports uploaded as artifacts
 - Automatic GitHub Issue when tests fail
 - Production deployment requires reviewer approval
+- E3 note: edited by Xiu-D
