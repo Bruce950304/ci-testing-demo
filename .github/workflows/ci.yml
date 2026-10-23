@@ -3,6 +3,8 @@ name: Build-Test-Release
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -79,6 +81,7 @@ jobs:
 
   deploy-staging:
     needs: test-integration
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: staging
     permissions:
@@ -92,11 +95,12 @@ jobs:
           name: build-artifact
           path: dist/
       - run: |
-          echo "✅ All tests passed. Releasing to staging..."
+          echo "All tests passed. Releasing to staging..."
           gh release create "staging-$(date +%s)" dist/* --prerelease --notes "Staging release"
 
   deploy-production:
     needs: deploy-staging
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -111,13 +115,12 @@ jobs:
           name: build-artifact
           path: dist/
       - run: |
-          echo "🚀 Releasing to production (TEST_ENV=$TEST_ENV)"
+          echo "Releasing to production (TEST_ENV=$TEST_ENV)"
           gh release create "prod-$(date +%s)" dist/* --notes "Production release"
 
-          
   notify-failure:
     needs: [test-unit, test-integration]
-    if: failure()
+    if: failure() && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -128,6 +131,6 @@ jobs:
       - name: Create issue about failed tests
         run: |
           gh issue create \
-            --title "❌ Tests failed in run #${{ github.run_number }}" \
+            --title "Tests failed in run #${{ github.run_number }}" \
             --body "Commit: ${{ github.sha }}
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
