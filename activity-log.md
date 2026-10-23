@@ -2,7 +2,7 @@ Line 1: project started
 
 Line 2: setup CI
 
-Line 3: first feature
+Line 3: first feature - edited by Tai4J
 
 Line 4: second feature
 
